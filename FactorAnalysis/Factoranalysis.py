@@ -37,9 +37,15 @@ def main():
     input_file = sys.argv[1]
     run_Factor_analysis(input_file, topic_size, number_of_topics)
 
-def run_Factor_analysis(input_file, topic_size, number_of_topics):   
-    output_file_name = f'{input_file}_Factor_analysis.csv'
-    df = pd.read_csv(input_file)
+def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = True):  
+    if isinstance(input_file, str): 
+        output_file_name = f'{input_file[:-4]}_Factor_analysis.csv'
+    else:
+        output_file_name = 'Output_Factor_analysis.csv'
+    if isinstance(input_file, pd.DataFrame):
+        df = input_file
+    else:
+        df = pd.read_csv(input_file)
     docs = [i if not isinstance(i, float) else '' for i in df['text']]
     topic_model = BERTopic(min_topic_size=topic_size, nr_topics = number_of_topics)
     # Fit the model on the documents
@@ -54,8 +60,10 @@ def run_Factor_analysis(input_file, topic_size, number_of_topics):
             continue 
         new_row = topic[['Topic', 'Count', 'Name', 'Representation', 'Representative_Docs']]
         output.loc[len(output)] = new_row
-    output[:].to_csv(output_file_name)
-    print(f"Output file name: {output_file_name}")
+    if save_file:
+        output[:].to_csv(output_file_name)
+        print(f"Output file name: {output_file_name}")
+    return output
 
   
 if __name__ == "__main__":
