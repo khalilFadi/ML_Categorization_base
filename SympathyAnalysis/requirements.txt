@@ -2,4 +2,4 @@ pandas
 transformers
 streamlit
 matplotlib
-torch
+'transformers[torch]'
