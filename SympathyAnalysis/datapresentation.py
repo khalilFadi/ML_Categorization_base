@@ -12,7 +12,7 @@ uploaded_file = st.file_uploader("Choose a CSV file", type='csv')
 present_as_numbers = st.checkbox('Show as numbers ', value= False)
 ask_about_the_model = st.chat_input("ask about the dataset")
 
-question = st.text_input("Question")
+question = st.text_input("Question: *Adding the question allows for more accurate results")
 # use stream lit to get a boolen value?
 if uploaded_file is not None:
     # Read the file into a DataFrame
