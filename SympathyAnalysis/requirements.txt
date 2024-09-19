@@ -1,6 +1,5 @@
 pandas
-# transformers
+transformers
 streamlit
 matplotlib
-'transformers[torch]'
 torch
