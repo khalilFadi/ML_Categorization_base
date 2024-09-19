@@ -2,3 +2,4 @@ pandas
 transformers
 streamlit
 matplotlib
+torch
