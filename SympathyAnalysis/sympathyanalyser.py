@@ -3,8 +3,8 @@ import pandas as pd
 sentiment_analyzer_distilbert = pipeline("sentiment-analysis")
 
 #input: full file find columns with text and apply sentiment analysis then output the full file plus the sentiment 
-def SentimentAnalysis(df, question = '', numerical_output=False):
-    col = df['text']
+def SentimentAnalysis(df, question = '', numerical_output=False, col_name = 'text'):
+    col = df[col_name]
     outputCol = []
     for i in col:
         if isinstance(i, str) and len(i) < 510:
