@@ -2,7 +2,10 @@ import sys
 from bertopic import BERTopic
 import pandas as pd
 import argparse
+import nltk
 
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 #run the iterface.py to get an easier time using this 
 
 #Input: csv filename
@@ -18,6 +21,9 @@ import argparse
 # this file will be saved in the same location as the file being studied 
 
  
+# Make sure to download the stopwords and punkt data if you haven't already
+nltk.download('punkt')
+nltk.download('stopwords')
 
 def main():
     # Check if any arguments were passed
@@ -35,9 +41,16 @@ def main():
     topic_size = args.topic_size
     number_of_topics = args.number_of_topics
     input_file = sys.argv[1]
-    run_Factor_analysis(input_file, topic_size, number_of_topics)
+    run_Factor_analysis(input_file, topic_size, number_of_topics)\
+    
+def remove_stop_words(text):
+    stop_words = set(stopwords.words('english'))
+    word_tokens = word_tokenize(text)
+    
+    filtered_text = [word for word in word_tokens if word.lower() not in stop_words]
+    return ' '.join(filtered_text)
 
-def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = True):  
+def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = True, include_stop_words=False):  
     if isinstance(input_file, str): 
         output_file_name = f'{input_file[:-4]}_Factor_analysis.csv'
     else:
@@ -47,9 +60,12 @@ def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = Tr
     else:
         df = pd.read_csv(input_file)
     docs = [i if not isinstance(i, float) else '' for i in df['text']]
-    topic_model = BERTopic(min_topic_size=topic_size, nr_topics = number_of_topics)
+
+    filtered_docs = [remove_stop_words(doc) for doc in docs]
+
+    topic_model = BERTopic(min_topic_size=topic_size, nr_topics = number_of_topics, )
     # Fit the model on the documents
-    topics, probabilities = topic_model.fit_transform(docs)
+    topics, probabilities = topic_model.fit_transform(filtered_docs)
 
     topic_info = topic_model.get_topic_info()
     # print(topic_info)
@@ -59,6 +75,7 @@ def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = Tr
         if topic['Topic'] == -1:
             continue 
         new_row = topic[['Topic', 'Count', 'Name', 'Representation', 'Representative_Docs']]
+        new_row['Representative_Docs'] = docs[index]  # Using original docs
         output.loc[len(output)] = new_row
     if save_file:
         output[:].to_csv(output_file_name)
