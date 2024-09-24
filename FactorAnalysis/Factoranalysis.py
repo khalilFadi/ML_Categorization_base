@@ -50,7 +50,7 @@ def remove_stop_words(text):
     filtered_text = [word for word in word_tokens if word.lower() not in stop_words]
     return ' '.join(filtered_text)
 
-def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = True, include_stop_words=False):  
+def run_Factor_analysis(input_file, topic_size, number_of_topics,include_empty=False, question_text = '',save_file = True, include_stop_words=False):  
     if isinstance(input_file, str): 
         output_file_name = f'{input_file[:-4]}_Factor_analysis.csv'
     else:
@@ -59,11 +59,17 @@ def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = Tr
         df = input_file
     else:
         df = pd.read_csv(input_file)
-    docs = [i if not isinstance(i, float) else '' for i in df['text']]
+    if include_empty:
+        docs = [i if not isinstance(i, float) else '' for i in df['text']]
+    else:
+        docs = [i for i in df['text'] if not isinstance(i, float)]
 
-    filtered_docs = [remove_stop_words(doc) for doc in docs]
-
-    topic_model = BERTopic(min_topic_size=topic_size, nr_topics = number_of_topics, )
+    if not include_stop_words:
+        filtered_docs = [str(question_text + remove_stop_words(doc)) for doc in docs]
+    else:
+        filtered_docs = docs
+    
+    topic_model = BERTopic(min_topic_size=topic_size, nr_topics = number_of_topics, calculate_probabilities=True)
     # Fit the model on the documents
     topics, probabilities = topic_model.fit_transform(filtered_docs)
 
@@ -75,11 +81,17 @@ def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = Tr
         if topic['Topic'] == -1:
             continue 
         new_row = topic[['Topic', 'Count', 'Name', 'Representation', 'Representative_Docs']]
-        new_row['Representative_Docs'] = docs[index]  # Using original docs
+        new_row['Representative_Docs'] = [i[len(question_text):] for i in new_row['Representative_Docs']]  # Using original docs
+        # Get the indices of documents in this topic
         output.loc[len(output)] = new_row
+    # title_col = [topic_model.transform(i) for i in docs[:10]]
+    # output = pd.concat(output, title_col)
     if save_file:
         output[:].to_csv(output_file_name)
         print(f"Output file name: {output_file_name}")
+
+    topic_model.visualize_topics()
+
     return output
 
   

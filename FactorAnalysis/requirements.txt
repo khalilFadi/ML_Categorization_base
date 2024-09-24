@@ -2,3 +2,5 @@ pandas
 bertopic
 tk
 nltk
+xlsxwriter
+plotly
