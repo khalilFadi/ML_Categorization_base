@@ -3,6 +3,14 @@ from bertopic import BERTopic
 import pandas as pd
 import argparse
 import nltk
+import streamlit as st
+
+@st.cache_resource
+def download_nltk_data():
+    nltk.download('punkt')
+    nltk.download('stopwords')
+
+download_nltk_data()
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -21,9 +29,6 @@ from nltk.tokenize import word_tokenize
 # this file will be saved in the same location as the file being studied 
 
  
-# Make sure to download the stopwords and punkt data if you haven't already
-nltk.download('punkt')
-nltk.download('stopwords')
 
 def main():
     # Check if any arguments were passed

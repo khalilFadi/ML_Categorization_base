@@ -4,3 +4,4 @@ tk
 nltk
 xlsxwriter
 plotly
+streamlit
