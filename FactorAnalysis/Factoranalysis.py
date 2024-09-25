@@ -22,8 +22,12 @@ from nltk.tokenize import word_tokenize
 
  
 # Make sure to download the stopwords and punkt data if you haven't already
-nltk.download('punkt')
-nltk.download('stopwords')
+# Download punkt if not already downloaded
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+ nltk.download('stopwords')
 
 def main():
     # Check if any arguments were passed
