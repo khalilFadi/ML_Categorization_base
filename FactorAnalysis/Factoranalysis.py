@@ -27,7 +27,7 @@ try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
     nltk.download('punkt')
- nltk.download('stopwords')
+nltk.download('stopwords')
 
 def main():
     # Check if any arguments were passed
