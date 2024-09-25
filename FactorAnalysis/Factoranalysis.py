@@ -22,7 +22,9 @@ from nltk.tokenize import word_tokenize
 
  
 # Make sure to download the stopwords and punkt data if you haven't already
-nltk.download('punkt')
+import nltk
+nltk.download('punkt_tab')
+# nltk.download('punkt')
 nltk.download('stopwords')
 
 def main():
