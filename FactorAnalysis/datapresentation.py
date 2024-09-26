@@ -13,11 +13,17 @@ number_of_topics = st.number_input('Enter a max number of topics', value=5)
 if uploaded_file is not None:
     # Read the file into a DataFrame
     df = pd.read_csv(uploaded_file)
-    
+    cols = df.columns
+
+    option = st.selectbox(
+        "Which column would you like to analyze?",
+        (cols),
+        placeholder="Select column name method...",
+    )
     # Display the DataFrame
     st.write("Uploaded DataFrame:")
     st.dataframe(df)
-    df = Factoranalysis.run_Factor_analysis(df, topic_size=topic_Size, number_of_topics=number_of_topics, save_file=False)
+    df = Factoranalysis.run_Factor_analysis(df, topic_size=topic_Size,col_name=option, number_of_topics=number_of_topics, save_file=False)
 # User input
 
 

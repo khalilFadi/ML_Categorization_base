@@ -52,7 +52,7 @@ def remove_stop_words(text):
     filtered_text = [word for word in word_tokens if word.lower() not in stop_words]
     return ' '.join(filtered_text)
 
-def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = True, include_stop_words=False):  
+def run_Factor_analysis(input_file, topic_size, number_of_topics,col_name='text', save_file = True, include_stop_words=False):  
     if isinstance(input_file, str): 
         output_file_name = f'{input_file[:-4]}_Factor_analysis.csv'
     else:
@@ -61,7 +61,7 @@ def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = Tr
         df = input_file
     else:
         df = pd.read_csv(input_file)
-    docs = [i if not isinstance(i, float) else '' for i in df['text']]
+    docs = [i if not isinstance(i, float) else '' for i in df[col_name]]
 
     filtered_docs = [remove_stop_words(doc) for doc in docs]
 
