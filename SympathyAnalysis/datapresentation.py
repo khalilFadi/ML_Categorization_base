@@ -22,13 +22,13 @@ if uploaded_file is not None:
     )
     st.write("#####")
 
-    present_as_numbers = st.checkbox('Show as numbers ', value= False)
-    st.caption('When selected, this option displays sentiment ratings as numerical values instead of text labels. Positive is 1, Neutral is 0, and Negative is -1.')
+    # present_as_numbers = st.checkbox('Show as numbers ', value= False)
+    # st.caption('When selected, this option displays sentiment ratings as numerical values instead of text labels. Positive is 1, Neutral is 0, and Negative is -1.')
     
     ask_about_the_model = st.chat_input("ask about the dataset")
 
-    question = st.text_input("Question: *Adding the question allows for more accurate results")
-    st.caption('Enter a specific question here to analyze the text based on question phrasing')
+    question = st.text_input("Question: *Adding the question of the survey allows for more accurate results")
+    st.caption('Ex: What recomendations do you have? ')
     st.write("#####")
     
     
@@ -36,7 +36,7 @@ if uploaded_file is not None:
     # Display the DataFrame
     # st.write("Uploaded DataFrame:")
     # st.dataframe(df)
-        df = sympathyanalyser.SentimentAnalysis(df, question=question, numerical_output=present_as_numbers, col_name=option)
+        df = sympathyanalyser.SentimentAnalysis(df, question=question, numerical_output=False, col_name=option)
 
 
     # pie chart of the data         
@@ -57,7 +57,7 @@ if uploaded_file is not None:
     explode = (0.1, 0, 0)  # explode the 1st slice
 
     fig, ax = plt.subplots()
-    wedges, texts, autotexts = ax.pie(sizes, explode=explode, autopct='', labels=labels, colors=colors, startangle=90)
+    wedges, texts, autotexts = ax.pie(sizes, explode=explode, autopct='', labels=labels, colors=colors, startangle=0)
     ax.axis('equal')  # Equal aspect ratio ensures that pie chart is a circle.
     for i, atext in enumerate(autotexts):
         atext.set_text(f'{(sizes[i]/len(df['sent']))*100:.2f}%')  # Customize label text
