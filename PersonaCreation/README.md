@@ -6,6 +6,7 @@
 
 - Python 3.x
 - pandas
+- FactorAnalysis 0.0.1 (local file)
 
 ## Installation
 
@@ -17,3 +18,12 @@
 4. Run the program:  
 
         streamlit run datapresentation.py
+
+# Process
+## Finding a Persona
+Create a list of personas and some data and information about them 
+I will use factor analysis to be able to do that
+1. get a list of the main topics 
+2. get the average age of for each topic
+3. get the median gender 
+4. get the median state 
