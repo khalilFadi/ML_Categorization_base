@@ -98,5 +98,20 @@ def get_age_info(df: pd.DataFrame, age_column_name, Topics):
             Topics_average_ages[row['Topic']].append(row[age_column_name])
     return Topics_average_ages
 
+def get_state_info(df: pd.DataFrame, state_column_name, Topics):
+    Topics_state = {x: [] for x in Topics['Topic']}
+    for index, row in df.iterrows():
+        if not isinstance(row[state_column_name], float) and row['Topic'] != -1:
+            Topics_state[row['Topic']].append(row[state_column_name])
+    return Topics_state
+
+def get_gender_info(df: pd.DataFrame, gender_column_name, Topics):
+    possible_values = set(df[gender_column_name])
+    Topics_gender = {x: {p: 0 for p in possible_values} for x in Topics['Topic']}
+    for index, row in df.iterrows():
+        if not isinstance(row[gender_column_name], float) and row['Topic'] != -1 and row[gender_column_name] != '':
+            Topics_gender[row['Topic']][row[gender_column_name]] += 1
+    return Topics_gender
+
 if __name__ == "__main__":
     main()
