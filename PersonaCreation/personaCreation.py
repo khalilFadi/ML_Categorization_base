@@ -1,6 +1,14 @@
 import transformers
 import pandas as pd 
+import numpy as np 
+import math
+from collections import Counter
+from faker import Faker
+from transformers import BartForConditionalGeneration, BartTokenizer
+from openai import OpenAI
 
+import os
+import torch
 # Create a list of personas and some data and information about them 
 # I will use factor analysis to be able to do that
 # 1. get a list of the main topics 
@@ -10,26 +18,124 @@ import pandas as pd
 
 # Here I am using a locally saved FactorAnalysis version 0.0.1
 import Factoranalysis
+model_name = "facebook/bart-large-cnn"
+tokenizer = BartTokenizer.from_pretrained(model_name)
+model = BartForConditionalGeneration.from_pretrained(model_name)
+OpenAI.api_key = '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'
 
-def find_Personas(input_file: pd.DataFrame, Topics: pd.DataFrame, number_of_personas) -> list:
+client = OpenAI()
+def generate_name(title, age, gender, state):
+    fake = Faker('en_US')
+        
+    # Set the seed based on the attributes to ensure consistency
+    seed = hash(f"{title}{age}{gender}{state}")
+    Faker.seed(seed)
+    
+    # Generate the name
+    if gender.lower() == 'female':
+        first_name = fake.first_name_female()
+    elif gender.lower() == 'male':
+        first_name = fake.first_name_male()
+    else:
+        first_name = fake.first_name()
+    
+    last_name = fake.last_name()
+    
+    full_name = f"{first_name} {last_name}"
+    
+    return full_name
+from transformers import BertForSequenceClassification, BertTokenizer
+import torch
+
+def generate_personality(age, gender, state, responses):
+    # Load pre-trained BERT model and tokenizer
+    model_name = "Minej/bert-base-personality"
+    tokenizer = BertTokenizer.from_pretrained(model_name)
+    model = BertForSequenceClassification.from_pretrained(model_name)
+
+    # Prepare input text
+    input_text = f"age: {age}\ngender: {gender}\nstate: {state}\nresponses: {' '.join(responses)}"
+    
+    # Tokenize input
+    inputs = tokenizer(input_text, return_tensors="pt", truncation=True, max_length=512, padding=True)
+    
+    # Generate personality traits
+    with torch.no_grad():
+        outputs = model(**inputs)
+        logits = outputs.logits
+        probabilities = torch.sigmoid(logits)
+    
+    # Map probabilities to personality traits
+    traits = ["Extroversion", "Neuroticism", "Agreeableness", "Conscientiousness", "Openness"]
+    personality_scores = {trait: float(prob) for trait, prob in zip(traits, probabilities[0])}
+    
+    # Generate personality description
+    description = generate_personality_paragraph(personality_scores, age, gender, state)
+    
+    return description
+
+def generate_personality_paragraph(scores, age, gender, state):
+    dominant_trait = max(scores, key=scores.get)
+    secondary_trait = sorted(scores.items(), key=lambda x: x[1], reverse=True)[1][0]
+    
+    paragraph = f"This {age}-year-old {gender} from {state} is a complex individual with a personality predominantly characterized by {dominant_trait.lower()}. Their {dominant_trait.lower()} nature is complemented by a strong tendency towards {secondary_trait.lower()}. "
+    
+    if scores["Extroversion"] > 0.6:
+        paragraph += "They thrive in social situations and enjoy being the center of attention. "
+    elif scores["Extroversion"] < 0.4:
+        paragraph += "They prefer intimate gatherings and find solace in solitary activities. "
+    
+    if scores["Openness"] > 0.6:
+        paragraph += "With a curious mind, they constantly seek new experiences and ideas. "
+    elif scores["Openness"] < 0.4:
+        paragraph += "They find comfort in routine and familiar surroundings. "
+    
+    if scores["Conscientiousness"] > 0.6:
+        paragraph += "Their organized and disciplined approach to life is evident in their personal and professional endeavors. "
+    elif scores["Conscientiousness"] < 0.4:
+        paragraph += "They have a spontaneous nature and prefer flexibility over rigid structures. "
+    
+    paragraph += f"Growing up in {state} has shaped their worldview, influencing their {list(scores.keys())[list(scores.values()).index(min(scores.values()))].lower()} tendencies. This unique combination of traits makes them a {dominant_trait.lower()} individual with a rich and multifaceted personality."
+    
+    return paragraph
+def find_Personas(input_file: pd.DataFrame, Topics: pd.DataFrame, number_of_personas, responses_used = 10) -> list:
     #input_file includes an extra column connecting each row to a topic 
     #Each persona includes:
         # topic it is representing[0], age[1], gender[2], and state[3]
     Personas = []
     #printing out information about the average age of each topic 
     #TODO: Make this work for different column names 
-    Topics_average_ages = []
-    for current_topic in Topics:
-        total_age_for_this_topic = 0
-        for index, row in input_file.iterrows():
-            if row['Topic'] == current_topic['Topic']:
-                total_age_for_this_topic += int(row['Q21'])
-        Topics_average_ages.append(total_age_for_this_topic/current_topic['Count'])
-    print(Topics_average_ages)
+    ages_per_topic = Factoranalysis.get_age_info(input_file, 'Q21', Topics)
+    gender_per_topic = Factoranalysis.get_gender_info(input_file, 'Q17', Topics)
+    state_per_topic = Factoranalysis.get_state_info(input_file, 'Q19', Topics)
+    #Creating the personas 
+    for i in Topics['Topic']:
+        Persona = {}
+        Persona['Title'] = i
+        Persona['age'] = np.random.normal(np.mean(ages_per_topic[i]), np.std(ages_per_topic[i]))
+        total_collected_genders = math.fsum(gender_per_topic[i].values())
+        for n in gender_per_topic[i]:
+            gender_per_topic[i][n] /= total_collected_genders
+        Persona['gender'] = np.random.choice(list(gender_per_topic[i].keys()), p = list(gender_per_topic[i].values()))
+        state_counts = Counter(state_per_topic[i])
+        total_counts = sum(state_counts.values())
+        state_probabilities = {state: count / total_counts for state, count in state_counts.items()}
+        Persona['state'] = np.random.choice(list(state_probabilities.keys()), p=list(state_probabilities.values()))
+        Persona['name'] = generate_name(Persona['Title'], Persona['age'], Persona['gender'], Persona['state'])
+        #Getting the responses that will be used for the personality
+        filtered_df = input_file[input_file['Topic'] == i]
+        #TODO: Change text to another column 
+        Persona['responses'] = [u if not isinstance(u, float) else '' for u in filtered_df.sample(n=responses_used, replace=True)['text']]
+        print(f"Personality: {generate_personality(Persona['age'], Persona['gender'], Persona['state'], Persona['responses'])}")
+
+        Personas.append(Persona)
+    # Adding a name to the Personas 
+    # Adding some more background info using the input file 
+    # grouping that info and creating a personality
     pass
 
 def run_Persona_Creation(input_file: pd.DataFrame, number_of_personas=5):
-    topics, df = Factoranalysis.run_Factor_analysis(input_file, number_of_topics=number_of_personas, topic_size=2, return_topic=False)
+    topics, df = Factoranalysis.run_Factor_analysis(input_file, number_of_topics=number_of_personas, topic_size=2, return_topic_info=True)
     find_Personas(df, topics, number_of_personas)
 
 run_Persona_Creation(pd.read_csv('recomendationFilInput.csv'))

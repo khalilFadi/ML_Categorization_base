@@ -3,14 +3,6 @@ from bertopic import BERTopic
 import pandas as pd
 import argparse
 import nltk
-import streamlit as st
-
-@st.cache_resource
-def download_nltk_data():
-    nltk.download('punkt_tab')
-    nltk.download('stopwords')
-
-download_nltk_data()
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -31,6 +23,7 @@ from nltk.tokenize import word_tokenize
  
 # Make sure to download the stopwords and punkt data if you haven't already
 import nltk
+import numpy as np
 nltk.download('punkt_tab')
 # nltk.download('punkt')
 nltk.download('stopwords')
@@ -60,7 +53,7 @@ def remove_stop_words(text):
     filtered_text = [word for word in word_tokens if word.lower() not in stop_words]
     return ' '.join(filtered_text)
 
-def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = True, include_stop_words=False, return_topic=True):  
+def run_Factor_analysis(input_file, topic_size, number_of_topics,col_name='text', save_file = True, include_stop_words=False, return_topic_info=False):  
     if isinstance(input_file, str): 
         output_file_name = f'{input_file[:-4]}_Factor_analysis.csv'
     else:
@@ -69,7 +62,7 @@ def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = Tr
         df = input_file
     else:
         df = pd.read_csv(input_file)
-    docs = [i if not isinstance(i, float) else '' for i in df['text']]
+    docs = [i if not isinstance(i, float) else '' for i in df[col_name]]
 
     filtered_docs = [remove_stop_words(doc) for doc in docs]
 
@@ -85,18 +78,39 @@ def run_Factor_analysis(input_file, topic_size, number_of_topics, save_file = Tr
         if topic['Topic'] == -1:
             continue 
         new_row = topic[['Topic', 'Count', 'Name', 'Representation', 'Representative_Docs']]
-        # new_row['Representative_Docs'] = docs[index]  # Using original docs
+        new_row['Representative_Docs'] = docs[index]  # Using original docs
         output.loc[len(output)] = new_row
     if save_file:
         output[:].to_csv(output_file_name)
         print(f"Output file name: {output_file_name}")
-    if return_topic:
+    if not return_topic_info:
         return output
     else:
         topics = topic_model.topics_
         df['Topic'] = topics
         return output, df
 
-  
+def get_age_info(df: pd.DataFrame, age_column_name, Topics):
+    Topics_average_ages = {x: [] for x in Topics['Topic']}
+    for index, row in df.iterrows():
+        if not np.isnan(row[age_column_name]) and row['Topic'] != -1:
+            Topics_average_ages[row['Topic']].append(row[age_column_name])
+    return Topics_average_ages
+
+def get_state_info(df: pd.DataFrame, state_column_name, Topics):
+    Topics_state = {x: [] for x in Topics['Topic']}
+    for index, row in df.iterrows():
+        if not isinstance(row[state_column_name], float) and row['Topic'] != -1:
+            Topics_state[row['Topic']].append(row[state_column_name])
+    return Topics_state
+
+def get_gender_info(df: pd.DataFrame, gender_column_name, Topics):
+    possible_values = set(df[gender_column_name])
+    Topics_gender = {x: {p: 0 for p in possible_values} for x in Topics['Topic']}
+    for index, row in df.iterrows():
+        if not isinstance(row[gender_column_name], float) and row['Topic'] != -1 and row[gender_column_name] != '':
+            Topics_gender[row['Topic']][row[gender_column_name]] += 1
+    return Topics_gender
+
 if __name__ == "__main__":
     main()
