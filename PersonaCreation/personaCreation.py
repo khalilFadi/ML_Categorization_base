@@ -74,30 +74,6 @@ def generate_personality(age, gender, state, responses):
     
     return description
 
-def generate_personality_paragraph(scores, age, gender, state):
-    dominant_trait = max(scores, key=scores.get)
-    secondary_trait = sorted(scores.items(), key=lambda x: x[1], reverse=True)[1][0]
-    
-    paragraph = f"This {age}-year-old {gender} from {state} is a complex individual with a personality predominantly characterized by {dominant_trait.lower()}. Their {dominant_trait.lower()} nature is complemented by a strong tendency towards {secondary_trait.lower()}. "
-    
-    if scores["Extroversion"] > 0.6:
-        paragraph += "They thrive in social situations and enjoy being the center of attention. "
-    elif scores["Extroversion"] < 0.4:
-        paragraph += "They prefer intimate gatherings and find solace in solitary activities. "
-    
-    if scores["Openness"] > 0.6:
-        paragraph += "With a curious mind, they constantly seek new experiences and ideas. "
-    elif scores["Openness"] < 0.4:
-        paragraph += "They find comfort in routine and familiar surroundings. "
-    
-    if scores["Conscientiousness"] > 0.6:
-        paragraph += "Their organized and disciplined approach to life is evident in their personal and professional endeavors. "
-    elif scores["Conscientiousness"] < 0.4:
-        paragraph += "They have a spontaneous nature and prefer flexibility over rigid structures. "
-    
-    paragraph += f"Growing up in {state} has shaped their worldview, influencing their {list(scores.keys())[list(scores.values()).index(min(scores.values()))].lower()} tendencies. This unique combination of traits makes them a {dominant_trait.lower()} individual with a rich and multifaceted personality."
-    
-    return paragraph
 def find_Personas(input_file: pd.DataFrame, Topics: pd.DataFrame, number_of_personas, responses_used = 10) -> list:
     #input_file includes an extra column connecting each row to a topic 
     #Each persona includes:
