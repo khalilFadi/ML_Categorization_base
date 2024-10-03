@@ -56,7 +56,7 @@ def find_Personas(input_file: pd.DataFrame, Topics: pd.DataFrame, number_of_pers
     #Creating the personas 
     for i in Topics['Topic']:
         Persona = {}
-        Persona['Title'] = i
+        Persona['Title'] = Topics['Name'][i]
         Persona['age'] = np.random.normal(np.mean(ages_per_topic[i]), np.std(ages_per_topic[i]))
         total_collected_genders = math.fsum(gender_per_topic[i].values())
         for n in gender_per_topic[i]:
