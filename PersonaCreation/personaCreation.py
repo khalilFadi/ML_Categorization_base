@@ -5,7 +5,7 @@ import math
 from collections import Counter
 from faker import Faker
 from transformers import BartForConditionalGeneration, BartTokenizer
-from openai import OpenAI
+# from openai import OpenAI
 
 import os
 import torch
@@ -21,9 +21,7 @@ import Factoranalysis
 model_name = "facebook/bart-large-cnn"
 tokenizer = BartTokenizer.from_pretrained(model_name)
 model = BartForConditionalGeneration.from_pretrained(model_name)
-OpenAI.api_key = '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'
 
-client = OpenAI()
 def generate_name(title, age, gender, state):
     fake = Faker('en_US')
         
@@ -44,35 +42,6 @@ def generate_name(title, age, gender, state):
     full_name = f"{first_name} {last_name}"
     
     return full_name
-from transformers import BertForSequenceClassification, BertTokenizer
-import torch
-
-def generate_personality(age, gender, state, responses):
-    # Load pre-trained BERT model and tokenizer
-    model_name = "Minej/bert-base-personality"
-    tokenizer = BertTokenizer.from_pretrained(model_name)
-    model = BertForSequenceClassification.from_pretrained(model_name)
-
-    # Prepare input text
-    input_text = f"age: {age}\ngender: {gender}\nstate: {state}\nresponses: {' '.join(responses)}"
-    
-    # Tokenize input
-    inputs = tokenizer(input_text, return_tensors="pt", truncation=True, max_length=512, padding=True)
-    
-    # Generate personality traits
-    with torch.no_grad():
-        outputs = model(**inputs)
-        logits = outputs.logits
-        probabilities = torch.sigmoid(logits)
-    
-    # Map probabilities to personality traits
-    traits = ["Extroversion", "Neuroticism", "Agreeableness", "Conscientiousness", "Openness"]
-    personality_scores = {trait: float(prob) for trait, prob in zip(traits, probabilities[0])}
-    
-    # Generate personality description
-    description = generate_personality_paragraph(personality_scores, age, gender, state)
-    
-    return description
 
 def find_Personas(input_file: pd.DataFrame, Topics: pd.DataFrame, number_of_personas, responses_used = 10) -> list:
     #input_file includes an extra column connecting each row to a topic 
@@ -102,7 +71,7 @@ def find_Personas(input_file: pd.DataFrame, Topics: pd.DataFrame, number_of_pers
         filtered_df = input_file[input_file['Topic'] == i]
         #TODO: Change text to another column 
         Persona['responses'] = [u if not isinstance(u, float) else '' for u in filtered_df.sample(n=responses_used, replace=True)['text']]
-        print(f"Personality: {generate_personality(Persona['age'], Persona['gender'], Persona['state'], Persona['responses'])}")
+        print(f"Personality: {Persona}")
 
         Personas.append(Persona)
     # Adding a name to the Personas 

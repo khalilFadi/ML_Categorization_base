@@ -1,0 +1,9 @@
+pandas
+transformers
+streamlit
+matplotlib
+torch
+numpy
+faker
+scikit-learn
+bertopic
