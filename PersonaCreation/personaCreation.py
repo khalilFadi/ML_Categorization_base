@@ -130,12 +130,58 @@ def find_Personas(input_file: pd.DataFrame, Topics: pd.DataFrame, number_of_pers
         Personas.append(Persona)
     return Personas
 
-def chat_with_persona(Persona, question, backgroud = ''):
-    
-    inputCase = 'this is a persona, I want to chat with it, for all future questions answer as if your this persona, all questions will start with (Q: ), make sure answers are not too long answer as if your a human having a normal chat, this is a persona that will be used in a focus group:'.join(Persona['personality']) + "\n\n Q: " + question
-    
-    generated_text = pipe(inputCase)
-    return generated_text
+def chat_with_persona(Persona, question, chat_history=[]):
+    context = f"You are {Persona['name']}, a {Persona['age']}-year-old {Persona['gender']} from {Persona['state']}. {Persona['personality']}\n\nChat history:\n"
+    for message in chat_history:
+        context += f"{message['role']}: {message['content']}\n"
+    context += f"User: {question}\n{Persona['name']}:, answer in first person point of view as if your {Persona['name']}, make sure your responses feel like they are in a real conversation. So try to answer the question including details that are vital to the point. make sure that the language and personality match the one you were given"
+
+    # generated_text = pipe(context, max_length=150, num_return_sequences=1)[0]['generated_text']
+    # return generated_text.strip()
+    client = ZhipuAI(api_key="63da1283335c112c90d32c0aeaf095b6.pXJbNVY0dQk5NgkR") # Please fill in your own APIKey
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "query_train_info",
+                "description": "Query train schedules based on user-provided information",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "departure": {
+                            "type": "string",
+                            "description": "Departure city or station",
+                        },
+                        "destination": {
+                            "type": "string",
+                            "description": "Destination city or station",
+                        },
+                        "date": {
+                            "type": "string",
+                            "description": "Date of the train to be queried",
+                        },
+                    },
+                    "required": ["departure", "destination", "date"],
+                },
+            }
+        }
+    ]
+
+    messages = [
+        {
+            "role": "user",
+            "content": f"{context}"
+        }
+    ]
+    response = client.chat.completions.create(
+        model="glm-4-plus", # Please fill in the model name you want to call
+        messages=messages,
+        tools=tools,
+        tool_choice="auto",
+    )
+
+    return response.choices[0].message.content
 
 def run_Persona_Creation(input_file: pd.DataFrame, number_of_personas=5):
     topics, df = Factoranalysis.run_Factor_analysis(input_file, number_of_topics=number_of_personas, topic_size=2, return_topic_info=True)

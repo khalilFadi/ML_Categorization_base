@@ -49,7 +49,7 @@ def main():
         if st.button("Send"):
             response = chat(st.session_state.selected_persona, user_input)
             print("Response: ", response)
-            st.session_state.chat_history.append(f"User: {user_input}")
+            st.session_state.chat_history.append(f"\nUser: {user_input}\n")
             # Here you can add logic to process the user input and generate a response
             st.session_state.chat_history.append(f"{st.session_state.selected_persona['name']}: {response}'\n")
 
