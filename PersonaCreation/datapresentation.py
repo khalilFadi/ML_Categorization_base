@@ -1,5 +1,15 @@
 import streamlit as st
 import pandas as pd
+import json
+
+from personaCreation import chat_with_persona as chat
+
+def display_persona_popup(persona):
+    st.markdown(f"## {persona['name']}")
+    st.write(f"**Age:** {persona['age']}")
+    st.write(f"**Gender:** {persona['gender']}")
+    st.write(f"**State:** {persona['state']}")
+    st.markdown(persona['personality'])
 
 def main():
     st.title("Persona Creation Program")
@@ -13,16 +23,22 @@ def main():
 
     if uploaded_file is not None:
         # Read the CSV file
-        df = pd.read_csv(uploaded_file)
+        df = pd.read_csv(uploaded_file, sep="%")
 
         # Number of personas to display
-        num_personas = st.number_input("Persons will be after it:", min_value=1, max_value=100, value=5)
+        num_personas = st.number_input("Number of personas to display:", min_value=1, max_value=100, value=5)
 
         # Display personas
         st.subheader("Personas:")
-        personas = df['name'].tolist()[:num_personas]  # Assuming 'name' column exists
+        personas = df.head(num_personas).to_dict('records')
         for persona in personas:
-            st.write(persona)
+            if st.button(persona['name']):
+                st.session_state.selected_persona = persona
+
+        # Display selected persona
+        if 'selected_persona' in st.session_state:
+            with st.expander(f"Selected Persona: {st.session_state.selected_persona['name']}", expanded=True):
+                display_persona_popup(st.session_state.selected_persona)
 
         # Chat-like model
         st.subheader("Chat:")
@@ -31,9 +47,11 @@ def main():
         # User input
         user_input = st.text_input("Type your message:")
         if st.button("Send"):
+            response = chat(st.session_state.selected_persona, user_input)
+            print("Response: ", response)
             st.session_state.chat_history.append(f"User: {user_input}")
             # Here you can add logic to process the user input and generate a response
-            st.session_state.chat_history.append(f"AI: This is a placeholder response to '{user_input}'\n")
+            st.session_state.chat_history.append(f"{st.session_state.selected_persona['name']}: {response}'\n")
 
         # Display chat history
         chat_content = "\n".join(st.session_state.chat_history)

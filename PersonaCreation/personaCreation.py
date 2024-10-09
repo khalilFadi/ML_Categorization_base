@@ -4,11 +4,6 @@ import numpy as np
 import math
 from collections import Counter
 from faker import Faker
-from transformers import BartForConditionalGeneration, BartTokenizer
-# from openai import OpenAI
-
-import os
-import torch
 # Create a list of personas and some data and information about them 
 # I will use factor analysis to be able to do that
 # 1. get a list of the main topics 
@@ -17,10 +12,17 @@ import torch
 # 4. get the median state 
 
 # Here I am using a locally saved FactorAnalysis version 0.0.1
+from zhipuai import ZhipuAI
+
 import Factoranalysis
-model_name = "facebook/bart-large-cnn"
-tokenizer = BartTokenizer.from_pretrained(model_name)
-model = BartForConditionalGeneration.from_pretrained(model_name)
+
+from huggingface_hub import login
+login(token="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")
+
+# Use a pipeline as a high-level helper# Use a pipeline as a high-level helper
+from transformers import pipeline
+
+pipe = pipeline("text2text-generation", model="google/flan-t5-large")
 
 def generate_name(title, age, gender, state):
     fake = Faker('en_US')
@@ -42,6 +44,53 @@ def generate_name(title, age, gender, state):
     full_name = f"{first_name} {last_name}"
     
     return full_name
+
+def generate_persona(persona_text):
+
+    client = ZhipuAI(api_key="63da1283335c112c90d32c0aeaf095b6.pXJbNVY0dQk5NgkR") # Please fill in your own APIKey
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "query_train_info",
+                "description": "Query train schedules based on user-provided information",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "departure": {
+                            "type": "string",
+                            "description": "Departure city or station",
+                        },
+                        "destination": {
+                            "type": "string",
+                            "description": "Destination city or station",
+                        },
+                        "date": {
+                            "type": "string",
+                            "description": "Date of the train to be queried",
+                        },
+                    },
+                    "required": ["departure", "destination", "date"],
+                },
+            }
+        }
+    ]
+
+    messages = [
+        {
+            "role": "user",
+            "content": f"{persona_text}"
+        }
+    ]
+    response = client.chat.completions.create(
+        model="glm-4-plus", # Please fill in the model name you want to call
+        messages=messages,
+        tools=tools,
+        tool_choice="auto",
+    )
+
+    return response.choices[0].message.content
 
 def find_Personas(input_file: pd.DataFrame, Topics: pd.DataFrame, number_of_personas, responses_used = 10) -> list:
     #input_file includes an extra column connecting each row to a topic 
@@ -66,21 +115,32 @@ def find_Personas(input_file: pd.DataFrame, Topics: pd.DataFrame, number_of_pers
         total_counts = sum(state_counts.values())
         state_probabilities = {state: count / total_counts for state, count in state_counts.items()}
         Persona['state'] = np.random.choice(list(state_probabilities.keys()), p=list(state_probabilities.values()))
+        # Adding a name to the Personas 
         Persona['name'] = generate_name(Persona['Title'], Persona['age'], Persona['gender'], Persona['state'])
         #Getting the responses that will be used for the personality
         filtered_df = input_file[input_file['Topic'] == i]
         #TODO: Change text to another column 
         Persona['responses'] = [u if not isinstance(u, float) else '' for u in filtered_df.sample(n=responses_used, replace=True)['text']]
-        print(f"Personality: {Persona}")
+        # Adding some more background info using the input file 
+        Persona['personality']  = generate_persona('I want you to create a personality based on these traits and responses from a survey give, be creative: '.join([str(Persona[i]) for i in Persona]))
+        # grouping that info and creating a personality
+        Persona['Chat_history'] = []
+        print(f"Personality: {Persona['personality']}")
 
         Personas.append(Persona)
-    # Adding a name to the Personas 
-    # Adding some more background info using the input file 
-    # grouping that info and creating a personality
-    pass
+    return Personas
+
+def chat_with_persona(Persona, question, backgroud = ''):
+    
+    inputCase = 'this is a persona, I want to chat with it, for all future questions answer as if your this persona, all questions will start with (Q: ), make sure answers are not too long answer as if your a human having a normal chat, this is a persona that will be used in a focus group:'.join(Persona['personality']) + "\n\n Q: " + question
+    
+    generated_text = pipe(inputCase)
+    return generated_text
 
 def run_Persona_Creation(input_file: pd.DataFrame, number_of_personas=5):
     topics, df = Factoranalysis.run_Factor_analysis(input_file, number_of_topics=number_of_personas, topic_size=2, return_topic_info=True)
-    find_Personas(df, topics, number_of_personas)
+    Personas = find_Personas(df, topics, number_of_personas)
+    pd.DataFrame(Personas).to_csv('Personas.csv', sep='%')
+    return Personas
 
-run_Persona_Creation(pd.read_csv('recomendationFilInput.csv'))
+# run_Persona_Creation(pd.read_csv('recomendationFilInput.csv'))

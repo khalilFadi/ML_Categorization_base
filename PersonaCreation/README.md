@@ -6,7 +6,9 @@
 
 - Python 3.x
 - pandas
-- FactorAnalysis 0.0.1 (local file)
+- FactorAnalysis 0.0.2 (local file)
+- zhipuai
+- Torch
 
 ## Installation
 
@@ -26,4 +28,9 @@ I will use factor analysis to be able to do that
 1. get a list of the main topics 
 2. get the average age of for each topic
 3. get the median gender 
-4. get the median state 
+4. get the median state  
+
+the peronas each include:
+- age, state, gender and title it is derived from 
+- name generated based on previous data 
+- Personality created using glm-4-plus 
