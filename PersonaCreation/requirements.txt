@@ -5,7 +5,6 @@ faker
 zhipuai
 huggingface_hub
 transformers
-json
 bertopic 
 argparse 
 nltk
