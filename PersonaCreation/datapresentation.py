@@ -32,7 +32,7 @@ def main():
             st.session_state.personas = df
         else:
             df = pd.read_csv(uploaded_file, sep="%")
-            st.session_state.personas = pd.read_csv(uploaded_file, sep="%").to_dict('records')
+            st.session_state.personas = df
         personas_created = True
 
     if uploaded_file is not None:
