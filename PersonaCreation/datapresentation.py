@@ -3,28 +3,41 @@ import pandas as pd
 import json
 
 from personaCreation import chat_with_persona as chat
-
+import personaCreation
 def display_persona_popup(persona):
     st.markdown(f"## {persona['name']}")
     st.write(f"**Age:** {persona['age']}")
     st.write(f"**Gender:** {persona['gender']}")
     st.write(f"**State:** {persona['state']}")
     st.markdown(persona['personality'])
-
 def main():
     st.title("Persona Creation Program")
+
+    file_type = st.radio("Choose file type to upload:", ("Personality File", "Dataset"))
 
     # Initialize session state for chat history
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
+    if 'personas' not in st.session_state:
+        st.session_state.personas = None
+    if 'selected_persona' not in st.session_state:
+        st.session_state.selected_persona = None
 
     # File upload section
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
+    if uploaded_file is not None and st.session_state.personas is None:
+        if file_type == "Dataset":
+            df = pd.DataFrame(personaCreation.run_Persona_Creation(pd.read_csv(uploaded_file)))
+            st.session_state.personas = df
+        else:
+            df = pd.read_csv(uploaded_file, sep="%")
+            st.session_state.personas = pd.read_csv(uploaded_file, sep="%").to_dict('records')
+        personas_created = True
+
     if uploaded_file is not None:
         # Read the CSV file
-        df = pd.read_csv(uploaded_file, sep="%")
-
+        df = st.session_state.personas
         # Number of personas to display
         num_personas = st.number_input("Number of personas to display:", min_value=1, max_value=100, value=5)
 
