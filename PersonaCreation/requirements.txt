@@ -1,7 +1,6 @@
 streamlit 
 pandas 
 numpy
-collections
 faker
 zhipuai
 huggingface_hub
