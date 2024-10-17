@@ -3,3 +3,4 @@ bertopic
 tk
 nltk
 bertopic 
+matplotlib
