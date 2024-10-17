@@ -112,6 +112,3 @@ def get_gender_info(df: pd.DataFrame, gender_column_name, Topics):
         if not isinstance(row[gender_column_name], float) and row['Topic'] != -1 and row[gender_column_name] != '':
             Topics_gender[row['Topic']][row[gender_column_name]] += 1
     return Topics_gender
-
-if __name__ == "__main__":
-    main()
