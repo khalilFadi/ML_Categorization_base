@@ -1,0 +1,6 @@
+pandas
+bertopic
+tk
+nltk
+bertopic 
+matplotlib
