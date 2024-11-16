@@ -7,6 +7,7 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 #run the iterface.py to get an easier time using this 
+from umap import UMAP
 
 #Input: csv filename
 # -s size of each topic 
@@ -53,42 +54,30 @@ def remove_stop_words(text):
     filtered_text = [word for word in word_tokens if word.lower() not in stop_words]
     return ' '.join(filtered_text)
 
-def run_Factor_analysis(input_file, topic_size, number_of_topics,col_name='text', save_file = True, include_stop_words=False, return_topic_info=False):  
-    if isinstance(input_file, str): 
-        output_file_name = f'{input_file[:-4]}_Factor_analysis.csv'
-    else:
-        output_file_name = 'Output_Factor_analysis.csv'
-    if isinstance(input_file, pd.DataFrame):
-        df = input_file
-    else:
-        df = pd.read_csv(input_file)
-    docs = [i if not isinstance(i, float) else '' for i in df[col_name]]
+def run_factor_analysis(docs, topic_size, number_of_topics):
+    # Set UMAP with a lower dimensionality if you have a small number of documents
+    umap_model = UMAP(n_components=min(5, len(docs) - 1))  # Adjust n_components based on document count
 
     filtered_docs = [remove_stop_words(doc) for doc in docs]
-
-    topic_model = BERTopic(min_topic_size=topic_size, nr_topics = number_of_topics, )
-    # Fit the model on the documents
+    topic_model = BERTopic(min_topic_size=topic_size, nr_topics=number_of_topics, umap_model=umap_model)
+    
     topics, probabilities = topic_model.fit_transform(filtered_docs)
-
     topic_info = topic_model.get_topic_info()
-    # print(topic_info)
-    output = pd.DataFrame(columns=['Topic', 'Count', 'Name', 'Representation', 'Representative_Docs'])
-    #get the main sentences 
+
+    output = []
     for index, topic in topic_info.iterrows():
         if topic['Topic'] == -1:
-            continue 
-        new_row = topic[['Topic', 'Count', 'Name', 'Representation', 'Representative_Docs']]
-        new_row['Representative_Docs'] = docs[index]  # Using original docs
-        output.loc[len(output)] = new_row
-    if save_file:
-        output[:].to_csv(output_file_name)
-        print(f"Output file name: {output_file_name}")
-    if not return_topic_info:
-        return output
-    else:
-        topics = topic_model.topics_
-        df['Topic'] = topics
-        return output, df
+            continue
+        new_row = {
+            "Topic": topic['Topic'],
+            "Count": topic['Count'],
+            "Name": topic.get('Name', ''),
+            "Representation": topic['Representation'],
+            "Representative_Docs": docs[index]
+        }
+        output.append(new_row)
+
+    return output
 
 
 def get_age_info(df: pd.DataFrame, age_column_name, Topics):
